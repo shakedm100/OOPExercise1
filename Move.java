@@ -1,2 +1,10 @@
-package PACKAGE_NAME;public class Move {
+public class Move {
+
+
+
+    public void undo()
+    {
+
+    }
+
 }

@@ -26,4 +26,7 @@ public interface Disc {
      */
     String getType();
 
+    Position getPosition();
+
+    void setPosition(Position position);
 }
