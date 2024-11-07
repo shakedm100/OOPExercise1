@@ -1,35 +1,35 @@
 public class Position {
-    private int x,y;
+    private int row, col;
 
-    public Position(int x, int y)
+    public Position(int row, int col)
     {
-        this.x = x;
-        this.y = y;
+        this.row = row;
+        this.col = col;
     }
 
     public Position(Position position)
     {
-        this.x = position.getX();
-        this.y = position.getY();
+        this.row = position.row();
+        this.col = position.col();
     }
 
-    public int getX()
+    public int row()
     {
-        return x;
+        return row;
     }
 
-    public int getY()
+    public int col()
     {
-        return y;
+        return col;
     }
 
-    public void setX(int x)
+    public void setRow(int row)
     {
-        this.x = x;
+        this.row = row;
     }
 
-    public void setY(int y)
+    public void setCol(int col)
     {
-        this.y = y;
+        this.col = col;
     }
 }

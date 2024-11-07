@@ -1,32 +1,31 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class GameLogic implements PlayableLogic {
 
-    ArrayList<Disc> discs;
-    Player firstPlayer, secondPlayer;
+    private ArrayList<Disc> discs;
+    private Disc[][] board;
+    private final int boardLength = 8;
+    private Player firstPlayer, secondPlayer;
+    private Stack<Move> previousMoves;
 
     @Override
-    public boolean locate_disc(Position a, Disc disc) {
-
-        for (int i = 0; i < discs.size(); i++)
+    public boolean locate_disc(Position a, Disc disc)
+    {
+        if(board[a.col()][a.row()] == null && countFlips(a) > 0)
         {
-            if(discs.get(i).getPosition().equals(a))
-                return false;
+            board[a.col()][a.row()] = disc;
+            discs.add(disc);
+            return true;
         }
-
-        return true;
+        return false;
     }
 
     @Override
     public Disc getDiscAtPosition(Position position)
     {
-        for (int i = 0; i < discs.size(); i++)
-        {
-            if(discs.get(i).getPosition().equals(position))
-                return discs.get(i);
-        }
-        return null;
+        return board[position.col()][position.row()];
     }
 
     @Override
@@ -44,19 +43,14 @@ public class GameLogic implements PlayableLogic {
             return valid;
 
         //Build all the combinations for board positions
-        for (int i = 1; i < 9; i++)
+        for (int i = 0; i < boardLength; i++)
         {
-            for (int j = 1; j < 9; j++)
+            for (int j = 0; j < boardLength; j++)
             {
                 Position position = new Position(i,j);
-                if(countFlips(position) > 0)
+                if(countFlips(position) > 0 && board[i][j] == null)
                     valid.add(new Position(i,j));
             }
-        }
-
-        for (int i = 0; i < discs.size(); i++)
-        {
-            valid.remove((Position) discs.get(i));
         }
 
         return valid;
@@ -75,146 +69,85 @@ public class GameLogic implements PlayableLogic {
             enemyPlayer = firstPlayer;
         }
 
-        int sum = 0;
-        sum += checkFlipsHorizontal(pos, enemyPlayer);
-        sum += checkFlipsVertical(pos, enemyPlayer);
-        sum += checkFlipsDiagonal(pos, enemyPlayer);
-
-
-        return sum;
+        return checkAllFlips(pos, enemyPlayer).size();
     }
 
-    private int checkFlipsDiagonal(Position pos, Player enemyPlayer)
+    /**
+     * This function checks all the possible flips from every direction
+     * @param pos - the starting position to check
+     * @param enemyPlayer - the enemy that's not currently playing
+     * @return a list of all the possible moves
+     */
+    public ArrayList<Disc> checkAllFlips(Position pos, Player enemyPlayer)
     {
-        int count = 0; // count counts potential flips
-        int sum = 0; // sum sums up all the flips only when it's confirmed
-        boolean check = true;
-        Position checkedPosition = new Position(pos); //Copy constructor
-        while(check)
-        {
-            checkedPosition.setY(checkedPosition.getY()-1);
-            checkedPosition.setX(checkedPosition.getX()-1);
-            if(checkedPosition.getY() < 1 || checkedPosition.getX() < 1)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
-            else
-            {
-                check = false;
-                sum += count;
-                count = 0;
-            }
-        }
+        ArrayList<Disc> willFlips = new ArrayList<>();
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, 1));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, -1));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1, 0));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, -1, 0));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1,1));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, -1,-1));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1,-1));
+        willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, -1,1));
 
-        //Now for the other side
-        check = true;
-        count = 0;
-        checkedPosition = new Position(pos); //Reset the checking position
-        while(check)
-        {
-            checkedPosition.setY(checkedPosition.getY()+1);
-            checkedPosition.setX(checkedPosition.getX()+1);
-            if(checkedPosition.getY() > 8 || checkedPosition.getX() > 8)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
-            else
-            {
-                check = false;
-                sum += count;
-                count = 0;
-            }
-        }
-
-        return sum;
+        return willFlips;
     }
 
-    private int checkFlipsVertical(Position pos, Player enemyPlayer)
+    /**
+     * This function checks if a given position is out of bound
+     * It depends on the final boardLength variable, so it is better
+     * For "changeability" if the board size changes
+     * @param position - a given position to check
+     * @return true if position is out of bound
+     */
+    private boolean checkOutOfBound(Position position)
     {
-        int count = 0; // count counts potential flips
-        int sum = 0; // sum sums up all the flips only when it's confirmed
-        boolean check = true;
-        Position checkedPosition = new Position(pos); //Copy constructor
-        while(check)
-        {
-            checkedPosition.setY(checkedPosition.getY()-1);
-            if(checkedPosition.getY() < 1)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
-            else
-            {
-                check = false;
-                sum += count;
-                count = 0;
-            }
-        }
-
-        //Now for the other side
-        check = true;
-        count = 0;
-        checkedPosition = new Position(pos); //Reset the checking position
-        while(check)
-        {
-            checkedPosition.setY(checkedPosition.getY()+1);
-            if(checkedPosition.getY() > 8)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
-            else
-            {
-                check = false;
-                sum += count;
-                count = 0;
-            }
-        }
-
-        return sum;
+        if(position.row() > boardLength || position.col() > boardLength)
+            return true;
+        if(position.row() < 0 || position.col() < 0)
+            return true;
+        return false;
     }
 
-    private int checkFlipsHorizontal(Position pos, Player enemyPlayer)
+    /**
+     * The method checks all the possible flips to one direction specified by the
+     * row and column change
+     * @param pos - starting position
+     * @param enemyPlayer - the player that's not currently playing
+     * @param rowChange - the change in the rows
+     * @param colChange - the change in the columns
+     * @return a list of discs that will flip
+     */
+    private List<Disc> checkDiscsFlip(Position pos, Player enemyPlayer, int rowChange, int colChange)
     {
-        //check horizontally
-        int count = 0; // count counts potential flips
-        int sum = 0; // sum sums up all the flips only when it's confirmed
         boolean check = true;
-        Position checkedPosition = new Position(pos); //Copy constructor
+        List<Disc> tempWillFlip = new ArrayList<>();
+        List<Disc> finalWillFlip = new ArrayList<>();
+
         while(check)
         {
-            checkedPosition.setX(checkedPosition.getX()-1);
-            if(checkedPosition.getX() < 1)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
+            pos.setCol(pos.col()+colChange);
+            pos.setCol(pos.row()+rowChange);
+            Disc disc = getDiscAtPosition(pos);
+            if(!checkOutOfBound(pos) || disc != null)
+            {
+                if(!disc.getOwner().equals(enemyPlayer))
+                    finalWillFlip.addAll(tempWillFlip);
+                else
+                    tempWillFlip.add(disc);
+            }
             else
             {
+                //Finished checking
                 check = false;
-                sum += count;
-                count = 0;
+                //Delete Will Flip
+                tempWillFlip = new ArrayList<>();
             }
         }
 
-        //Now for the other side
-        check = true;
-        count = 0;
-        checkedPosition = new Position(pos); //Reset the checking position
-        while(check)
-        {
-            checkedPosition.setX(checkedPosition.getX()+1);
-            if(checkedPosition.getX() > 8)
-                check = false;
-            else if(getDiscAtPosition(checkedPosition).getOwner().equals(enemyPlayer))
-                count++;
-            else
-            {
-                check = false;
-                sum += count;
-                count = 0;
-            }
-        }
-
-        return sum;
+        return finalWillFlip;
     }
+
 
     @Override
     public Player getFirstPlayer()
@@ -255,28 +188,27 @@ public class GameLogic implements PlayableLogic {
         //Clean previous discs
         discs = new ArrayList<>();
         //First
-        Position placement = new Position(3,3);
-        SimpleDisc simple = new SimpleDisc(firstPlayer, placement);
+        SimpleDisc simple = new SimpleDisc(firstPlayer);
+        board[3][3] = simple;
         discs.add(simple);
 
         //Second
-        placement = new Position(4,4);
-        simple.setPosition(placement);
+        board[4][4] = simple;
         discs.add(simple);
 
         //Third
-        placement = new Position(4,3);
-        simple = new SimpleDisc(secondPlayer, placement);
+        simple.setOwner(secondPlayer);
+        board[4][3] = simple;
         discs.add(simple);
 
         //Fourth
-        placement = new Position(3,4);
-        simple.setPosition(placement);
+        board[3][4] = simple;
         discs.add(simple);
     }
 
     @Override
-    public void undoLastMove() {
-
+    public void undoLastMove()
+    {
+        previousMoves.pop().undo(firstPlayer, secondPlayer);
     }
 }

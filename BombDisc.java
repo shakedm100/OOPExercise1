@@ -1,41 +1,14 @@
-public class BombDisc implements Disc {
+public class BombDisc extends Disc {
 
     private Player player;
-    private Position position;
 
-    public BombDisc(Player player, Position position)
-    {
-        this.player = player;
-        this.position = position;
-    }
-
-    @Override
-    public Player getOwner()
-    {
-        return player;
-    }
-
-    @Override
-    public void setOwner(Player player)
-    {
-        this.player = player;
+    public BombDisc(Player owner) {
+        super(owner);
     }
 
     @Override
     public String getType()
     {
-        return "\uD83D\uDCA3";
+        return "💣";
     }
-
-    @Override
-    public Position getPosition()
-    {
-        return position;
-    }
-
-    public void setPosition(Position position)
-    {
-        this.position = position;
-    }
-
 }

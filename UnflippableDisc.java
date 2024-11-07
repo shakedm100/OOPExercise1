@@ -1,8 +1,8 @@
-public class SimpleDisc extends Disc {
+public class UnflippableDisc extends Disc {
 
     private Player player;
 
-    public SimpleDisc(Player player)
+    public UnflippableDisc(Player player)
     {
         super(player);
     }
@@ -10,7 +10,7 @@ public class SimpleDisc extends Disc {
     @Override
     public String getType()
     {
-        return "⬤";
+        return "⭕";
     }
 
 }
