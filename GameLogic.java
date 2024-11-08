@@ -8,29 +8,61 @@ public class GameLogic implements PlayableLogic {
     private Disc[][] board;
     private final int boardLength = 8;
     private Player firstPlayer, secondPlayer;
+    private boolean playerTurn; //True - first player, false - second player
     private Stack<Move> previousMoves;
 
+    public GameLogic()
+    {
+        board = new Disc[boardLength][boardLength];
+        discs = new ArrayList<>();
+        previousMoves = new Stack<>();
+        playerTurn = true;
+    }
     @Override
     public boolean locate_disc(Position a, Disc disc)
     {
-        if(board[a.col()][a.row()] == null && countFlips(a) > 0)
+        if(board[a.row()][a.col()] == null && countFlips(a) > 0)
         {
-            board[a.col()][a.row()] = disc;
+            ArrayList<Disc> willFlip = new ArrayList<>();
+            if(disc.getOwner().equals(firstPlayer))
+                willFlip = checkAllFlips(a, secondPlayer);
+
+            else
+                willFlip = checkAllFlips(a, firstPlayer);
+            flipDiscs(willFlip);
+
+            playerTurn = !playerTurn; //Change turn
+
+            board[a.row()][a.col()] = disc;
             discs.add(disc);
+
+            previousMoves.push(new Move(willFlip,disc,a));
+
             return true;
         }
         return false;
     }
 
+    private void flipDiscs(ArrayList<Disc> toFlip)
+    {
+        for (int i = 0; i < toFlip.size(); i++)
+        {
+            if(toFlip.get(i).getOwner().equals(firstPlayer))
+                toFlip.get(i).setOwner(secondPlayer);
+            else
+                toFlip.get(i).setOwner(firstPlayer);
+        }
+    }
+
     @Override
     public Disc getDiscAtPosition(Position position)
     {
-        return board[position.col()][position.row()];
+        return board[position.row()][position.col()];
     }
 
     @Override
     public int getBoardSize() {
-        return 8*8;
+        return 8;
     }
 
     //Method runs at O(n) when n < 64
@@ -74,13 +106,14 @@ public class GameLogic implements PlayableLogic {
 
     /**
      * This function checks all the possible flips from every direction
-     * @param pos - the starting position to check
+     * @param move - the starting position to check
      * @param enemyPlayer - the enemy that's not currently playing
      * @return a list of all the possible moves
      */
-    public ArrayList<Disc> checkAllFlips(Position pos, Player enemyPlayer)
+    public ArrayList<Disc> checkAllFlips(Position move, Player enemyPlayer)
     {
         ArrayList<Disc> willFlips = new ArrayList<>();
+        Position pos = new Position(move); //Copy constructor
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, 1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, -1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1, 0));
@@ -102,7 +135,7 @@ public class GameLogic implements PlayableLogic {
      */
     private boolean checkOutOfBound(Position position)
     {
-        if(position.row() > boardLength || position.col() > boardLength)
+        if(position.row() >= boardLength || position.col() >= boardLength)
             return true;
         if(position.row() < 0 || position.col() < 0)
             return true;
@@ -112,35 +145,56 @@ public class GameLogic implements PlayableLogic {
     /**
      * The method checks all the possible flips to one direction specified by the
      * row and column change
-     * @param pos - starting position
+     * @param move - starting position
      * @param enemyPlayer - the player that's not currently playing
      * @param rowChange - the change in the rows
      * @param colChange - the change in the columns
      * @return a list of discs that will flip
      */
-    private List<Disc> checkDiscsFlip(Position pos, Player enemyPlayer, int rowChange, int colChange)
+    private List<Disc> checkDiscsFlip(Position move, Player enemyPlayer, int rowChange, int colChange)
     {
         boolean check = true;
         List<Disc> tempWillFlip = new ArrayList<>();
         List<Disc> finalWillFlip = new ArrayList<>();
 
+        Position pos = new Position(move);
+
+        if(checkOutOfBound(pos) || getDiscAtPosition(pos) != null || enemyPlayer == null)
+            return finalWillFlip;
+
+
         while(check)
         {
             pos.setCol(pos.col()+colChange);
-            pos.setCol(pos.row()+rowChange);
-            Disc disc = getDiscAtPosition(pos);
-            if(!checkOutOfBound(pos) || disc != null)
+            pos.setRow(pos.row()+rowChange);
+            if(!checkOutOfBound(pos))
             {
-                if(!disc.getOwner().equals(enemyPlayer))
-                    finalWillFlip.addAll(tempWillFlip);
-                else
-                    tempWillFlip.add(disc);
+                Disc disc = getDiscAtPosition(pos);
+                if(disc != null)
+                {
+                    if(disc.getOwner().equals(enemyPlayer))
+                    {
+                        tempWillFlip.add(disc);
+                    }
+                    else
+                    {
+                        finalWillFlip.addAll(tempWillFlip);
+                        //Finished checking
+                        check = false;
+                        tempWillFlip = new ArrayList<>();
+                    }
+                }
+                else //If there is no disc, then
+                {
+                    //Finished checking
+                    check = false;
+                    //Delete Will Flip
+                    tempWillFlip = new ArrayList<>();
+                }
             }
-            else
+            else //If out of bound, then reset list
             {
-                //Finished checking
                 check = false;
-                //Delete Will Flip
                 tempWillFlip = new ArrayList<>();
             }
         }
@@ -170,14 +224,25 @@ public class GameLogic implements PlayableLogic {
 
     @Override
     public boolean isFirstPlayerTurn() {
-        return false;
+        return playerTurn;
     }
 
     @Override
     public boolean isGameFinished()
     {
-        int moves = ValidMoves().size();
-        if(moves == 0)
+        int moves = 0;
+        Position position;
+        for (int i = 0; i < boardLength; i++) {
+            for (int j = 0; j < boardLength; j++) {
+                position = new Position(i,j);
+                if(playerTurn)
+                    moves += checkAllFlips(position, firstPlayer).size();
+                if(!playerTurn)
+                    moves += checkAllFlips(position, secondPlayer).size();
+            }
+        }
+
+        if(moves > 0)
             return false;
         return true;
     }
@@ -185,25 +250,41 @@ public class GameLogic implements PlayableLogic {
     @Override
     public void reset()
     {
-        //Clean previous discs
+        board = new Disc[boardLength][boardLength];
         discs = new ArrayList<>();
-        //First
         SimpleDisc simple = new SimpleDisc(firstPlayer);
-        board[3][3] = simple;
-        discs.add(simple);
+        Position position = new Position(3,3);
+        if(firstPlayer != null)
+        {
+            //Clean previous discs
+            discs = new ArrayList<>();
+            //First
+            discs.add(simple);
+            board[position.row()][position.col()] = simple;
 
-        //Second
-        board[4][4] = simple;
-        discs.add(simple);
 
-        //Third
-        simple.setOwner(secondPlayer);
-        board[4][3] = simple;
-        discs.add(simple);
+            //Second
+            simple = new SimpleDisc(firstPlayer);
+            position = new Position(4,4);
+            discs.add(simple);
+            board[position.row()][position.col()] = simple;
+        }
+        if(secondPlayer != null)
+        {
+            //Third
+            position = new Position(3,4);
+            simple = new SimpleDisc(secondPlayer);
+            discs.add(simple);
+            board[position.row()][position.col()] = simple;
 
-        //Fourth
-        board[3][4] = simple;
-        discs.add(simple);
+
+            //Fourth
+            position = new Position(4,3);
+            simple = new SimpleDisc(secondPlayer);
+            discs.add(simple);
+            board[position.row()][position.col()] = simple;
+
+        }
     }
 
     @Override
