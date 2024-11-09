@@ -32,7 +32,9 @@ public class RandomAI extends AIPlayer{
         //Choose Disc
         Disc disc = chooseRandomDisc();
 
-        return new Move(willFlip, disc, chosenMove);
+        //return new Move(willFlip, disc, chosenMove);
+
+        return null;
     }
 
     private Disc chooseRandomDisc()

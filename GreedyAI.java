@@ -41,6 +41,8 @@ public class GreedyAI extends AIPlayer {
 
         SimpleDisc simpleDisc = new SimpleDisc(this);
 
-        return new Move(willFlip, simpleDisc, highestPosition);
+        //return new Move(willFlip, simpleDisc, highestPosition);
+
+        return null;
     }
 }

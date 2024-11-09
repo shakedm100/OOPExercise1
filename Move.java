@@ -2,33 +2,31 @@ import java.util.ArrayList;
 
 public class Move {
 
-    private ArrayList<Disc> flippedLast;
+    private Disc[][] board;
     private Disc lastPlaced;
     private Position position;
 
-    public Move(ArrayList<Disc> flippedLast, Disc lastPlaced, Position position)
+    public Move(Disc[][] board, Disc lastPlaced, Position position)
     {
-        this.flippedLast = flippedLast;
+        this.board = board;
         this.lastPlaced = lastPlaced;
         this.position = position;
     }
 
-    public void undo(Player player1, Player player2)
+    /**
+    public void undo(Disc[][] currentBoard)
     {
-        if(!player1.isHuman() || !player2.isHuman())
-            return ;
-
-        for (int i = 0; i < flippedLast.size(); i++)
+        for (int i = 0; i < board.length; i++)
         {
-            Player checkPlayer = flippedLast.get(i).getOwner();
-            if(checkPlayer.equals(player1))
-                flippedLast.get(i).setOwner(player2);
-            else
-                flippedLast.get(i).setOwner(player1);
+            for (int j = 0; j < board[i].length; j++)
+            {
+                currentBoard[i][j] = board[i][j];
+            }
         }
 
-        lastPlaced.setOwner(null);
+        lastPlaced = null;
     }
+*/
 
     public Disc disc()
     {
@@ -39,4 +37,8 @@ public class Move {
     {
         return position;
     }
+
+    public Disc[][] getBoard(){ return board; }
+
+    public void setDisc(Disc disc) { lastPlaced = disc; }
 }

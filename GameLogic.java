@@ -23,7 +23,25 @@ public class GameLogic implements PlayableLogic {
     {
         if(board[a.row()][a.col()] == null && countFlips(a) > 0)
         {
-            ArrayList<Disc> willFlip = new ArrayList<>();
+            //Create a deep copy
+            Disc[][] copy = new Disc[board.length][];
+            for (int i = 0; i < board.length; i++) {
+                copy[i] = new Disc[board[i].length];
+                for (int j = 0; j < board[i].length; j++) {
+                    if(board[i][j] != null)
+                    {
+                        if(board[i][j] instanceof SimpleDisc)
+                            copy[i][j] = new SimpleDisc(board[i][j].getOwner());
+                        else if(board[i][j] instanceof UnflippableDisc)
+                            copy[i][j] = new UnflippableDisc(board[i][j].getOwner());
+                        else
+                            copy[i][j] = new BombDisc(board[i][j].getOwner());
+                    }
+                }
+            }
+            previousMoves.push(new Move(copy,disc,a));
+
+            ArrayList<Disc> willFlip;
             if(disc.getOwner().equals(firstPlayer))
                 willFlip = checkAllFlips(a, secondPlayer);
 
@@ -35,8 +53,6 @@ public class GameLogic implements PlayableLogic {
 
             board[a.row()][a.col()] = disc;
             discs.add(disc);
-
-            previousMoves.push(new Move(willFlip,disc,a));
 
             return true;
         }
@@ -244,7 +260,40 @@ public class GameLogic implements PlayableLogic {
 
         if(moves > 0)
             return false;
+
+        int countFirstPlayer = countDisc(firstPlayer);
+        int countSecondPlayer = countDisc(secondPlayer);
+        if(countFirstPlayer > countSecondPlayer)
+        {
+            System.out.println("Game over, the winner is the first player with: "+countFirstPlayer+" discs, the second player is with: "+countSecondPlayer+" discs.");
+            firstPlayer.addWin();
+        }
+        else if(countSecondPlayer > countFirstPlayer)
+        {
+            System.out.println("Game over, the winner is the second player with: "+countSecondPlayer+" discs, the first player is with: "+countFirstPlayer+" discs.");
+            secondPlayer.addWin();
+        }
+        else
+            System.out.println("Game over, it's a tie! Both players have: "+countFirstPlayer+" discs.");
+
         return true;
+    }
+
+    /**
+     * This function checks how many discs a player currently has on the board
+     * @param player - the player to check
+     * @return how many discs owned
+     */
+    private int countDisc(Player player)
+    {
+        int count = 0;
+        for (int i = 0; i < discs.size(); i++)
+        {
+            if(discs.get(i).getOwner().equals(player))
+                count++;
+        }
+
+        return count;
     }
 
     @Override
@@ -290,6 +339,27 @@ public class GameLogic implements PlayableLogic {
     @Override
     public void undoLastMove()
     {
-        previousMoves.pop().undo(firstPlayer, secondPlayer);
+        if(!firstPlayer.isHuman() || !secondPlayer.isHuman())
+            return ;
+        if(!previousMoves.isEmpty())
+        {
+            Move move = previousMoves.pop();
+
+            for (int i = 0; i < board.length; i++)
+            {
+                for (int j = 0; j < board[i].length; j++)
+                {
+                     board[i][j] = move.getBoard()[i][j];
+                }
+            }
+
+            move.setDisc(null);
+
+            playerTurn = !playerTurn;
+        }
+        else
+        {
+            System.out.println("No more turns to undo");
+        }
     }
 }
