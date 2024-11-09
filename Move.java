@@ -1,10 +1,8 @@
-import java.util.ArrayList;
-
 public class Move {
 
-    private Disc[][] board;
+    private final Disc[][] board;
     private Disc lastPlaced;
-    private Position position;
+    private final Position position;
 
     public Move(Disc[][] board, Disc lastPlaced, Position position)
     {
