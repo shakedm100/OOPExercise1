@@ -29,14 +29,21 @@ public class GreedyAI extends AIPlayer {
                 highestPositions.add(validMoves.get(i));
         }
 
-        Position idealPosition;
+        Position idealPosition = highestPositions.getFirst();
         if(highestPositions.size() > 1)
         {
-            for (int i = 0; i < highestPositions.size(); i++)
+            for (int i = 0; i < highestPositions.size()-1; i++)
             {
-                if(highestPositions.get(i+1) != null)
+                if(highestPositions.get(i+1).col() > highestPositions.get(i).col())
+                    idealPosition = highestPositions.get(i+1);
+                else if(highestPositions.get(i+1).col() < highestPositions.get(i).col())
+                    idealPosition = highestPositions.get(i);
+                else //If the columns are equal compare the rows
                 {
-                    if(highestPositions.get(i).col() >
+                    if(highestPositions.get(i+1).row() >= highestPositions.get(i).row())
+                        idealPosition = highestPositions.get(i+1);
+                    else
+                        idealPosition = highestPositions.get(i);
                 }
             }
         }
@@ -55,6 +62,5 @@ public class GreedyAI extends AIPlayer {
         SimpleDisc simpleDisc = new SimpleDisc(this);
 
         return new Move(currentBoard, simpleDisc, idealPosition);
-
     }
 }

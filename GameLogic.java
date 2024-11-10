@@ -11,6 +11,13 @@ public class GameLogic implements PlayableLogic {
     private boolean playerTurn; //True - first player, false - second player
     private Stack<Move> previousMoves;
 
+    /**
+     * TODO:
+     * 1. Game finish logic doesn't work well with AI
+     * 2. Towards the end of the game aiMove receives null and an exception occurs
+     * 3. Implement Unflippable and bomb logic
+     * 4. Make sure all the prints are placed and correct
+     */
     public GameLogic()
     {
         board = new Disc[boardLength][boardLength];

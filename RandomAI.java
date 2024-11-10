@@ -16,7 +16,12 @@ public class RandomAI extends AIPlayer{
 
         Random random = new Random();
 
-        int rand = random.nextInt(validMoves.size()-1);
+        int rand;
+        if(validMoves.size() > 1)
+            rand = random.nextInt(validMoves.size()-1);
+        else
+            rand = 0;
+
         Position chosenMove = validMoves.get(rand);
 
         Disc[][] currentBoard = new Disc[gameStatus.getBoardSize()][gameStatus.getBoardSize()];
