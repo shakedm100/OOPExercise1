@@ -19,24 +19,25 @@ public class RandomAI extends AIPlayer{
         int rand = random.nextInt(validMoves.size()-1);
         Position chosenMove = validMoves.get(rand);
 
-        ArrayList<Disc> willFlip = new ArrayList<>();
-        Player enemy;
-        if(gameStatus.getFirstPlayer().isPlayerOne())
-            enemy = gameStatus.getSecondPlayer();
-        else
-            enemy = gameStatus.getFirstPlayer();
+        Disc[][] currentBoard = new Disc[gameStatus.getBoardSize()][gameStatus.getBoardSize()];
 
         if(gameStatus instanceof GameLogic)
-            willFlip = ((GameLogic) gameStatus).checkAllFlips(chosenMove, enemy);
+            currentBoard = ((GameLogic) gameStatus).getBoard();
 
         //Choose Disc
         Disc disc = chooseRandomDisc();
 
-        //return new Move(willFlip, disc, chosenMove);
+        return new Move(currentBoard, disc, chosenMove);
 
-        return null;
     }
 
+    /**
+     * The method chooses which disc the bot will play
+     * 60% chance to choose simple disc
+     * 20% chance to choose unflippable disc
+     * 20% chance to choose bomb disc
+     * @return the disc type to use
+     */
     private Disc chooseRandomDisc()
     {
         boolean validDisc = false;

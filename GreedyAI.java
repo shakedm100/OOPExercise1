@@ -15,34 +15,46 @@ public class GreedyAI extends AIPlayer {
             return null;
 
         int highestFlips = 0;
-        Position highestPosition = validMoves.getFirst();
+        ArrayList<Position> highestPositions = new ArrayList<>();
         for (int i = 0; i < validMoves.size(); i++)
         {
             int currentFlips = gameStatus.countFlips(validMoves.get(i));
             if(currentFlips > highestFlips)
             {
+                highestPositions = new ArrayList<>();
                 highestFlips = currentFlips;
-                highestPosition = validMoves.get(i);
+                highestPositions.add(validMoves.get(i));
             }
+            else if(currentFlips == highestFlips)
+                highestPositions.add(validMoves.get(i));
         }
 
-        Player enemy;
-        if(gameStatus.getFirstPlayer().isPlayerOne())
-            enemy = gameStatus.getSecondPlayer();
+        Position idealPosition;
+        if(highestPositions.size() > 1)
+        {
+            for (int i = 0; i < highestPositions.size(); i++)
+            {
+                if(highestPositions.get(i+1) != null)
+                {
+                    if(highestPositions.get(i).col() >
+                }
+            }
+        }
         else
-            enemy = gameStatus.getFirstPlayer();
+        {
+            idealPosition = highestPositions.getFirst();
+        }
 
-        ArrayList<Disc> willFlip = new ArrayList<>();
+        Disc[][] currentBoard = new Disc[gameStatus.getBoardSize()][gameStatus.getBoardSize()];
 
         if(gameStatus instanceof GameLogic)
         {
-            willFlip = ((GameLogic) gameStatus).checkAllFlips(highestPosition, enemy);
+            currentBoard = ((GameLogic) gameStatus).getBoard();
         }
 
         SimpleDisc simpleDisc = new SimpleDisc(this);
 
-        //return new Move(willFlip, simpleDisc, highestPosition);
+        return new Move(currentBoard, simpleDisc, idealPosition);
 
-        return null;
     }
 }

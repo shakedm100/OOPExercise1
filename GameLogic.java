@@ -362,4 +362,9 @@ public class GameLogic implements PlayableLogic {
             System.out.println("No more turns to undo");
         }
     }
+
+    public Disc[][] getBoard()
+    {
+        return board;
+    }
 }
