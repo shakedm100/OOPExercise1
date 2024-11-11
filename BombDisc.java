@@ -1,7 +1,20 @@
-public class BombDisc extends Disc {
+public class BombDisc implements Disc {
 
-    public BombDisc(Player owner) {
-        super(owner);
+    private Player owner;
+
+    public BombDisc(Player owner)
+    {
+        this.owner = owner;
+    }
+
+    public void setOwner(Player player)
+    {
+        owner = player;
+    }
+
+    public Player getOwner()
+    {
+        return owner;
     }
 
     @Override

@@ -32,4 +32,9 @@ public class Position {
     {
         this.col = col;
     }
+
+    @Override
+    public String toString() {
+        return "("+row+","+col+")";
+    }
 }

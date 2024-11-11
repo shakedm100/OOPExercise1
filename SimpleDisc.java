@@ -1,8 +1,21 @@
-public class SimpleDisc extends Disc {
+public class SimpleDisc implements Disc {
 
-    public SimpleDisc(Player player)
+    private Player owner;
+
+    public SimpleDisc(Player owner)
     {
-        super(player);
+        this.owner = owner;
+    }
+
+
+    public void setOwner(Player player)
+    {
+        owner = player;
+    }
+
+    public Player getOwner()
+    {
+        return owner;
     }
 
     @Override

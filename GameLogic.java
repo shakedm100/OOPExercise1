@@ -10,13 +10,13 @@ public class GameLogic implements PlayableLogic {
     private Player firstPlayer, secondPlayer;
     private boolean playerTurn; //True - first player, false - second player
     private Stack<Move> previousMoves;
+    private Position[] directions;
+
 
     /**
      * TODO:
-     * 1. Game finish logic doesn't work well with AI
-     * 2. Towards the end of the game aiMove receives null and an exception occurs
-     * 3. Implement Unflippable and bomb logic
-     * 4. Make sure all the prints are placed and correct
+     * 1. Bomb near bomb creates stack overflow of recursive calls
+     * 2. The flips method counts unflippable as a flip, need to make an exception there
      */
     public GameLogic()
     {
@@ -24,6 +24,16 @@ public class GameLogic implements PlayableLogic {
         discs = new ArrayList<>();
         previousMoves = new Stack<>();
         playerTurn = true;
+
+        directions = new Position[8];
+        directions[0] = new Position(0,1);
+        directions[1] = new Position(0, -1);
+        directions[2] = new Position(1,0);
+        directions[3] = new Position(-1,0);
+        directions[4] = new Position(1,1);
+        directions[5] = new Position(-1,-1);
+        directions[6] = new Position(1,-1);
+        directions[7] = new Position(-1,1);
     }
     @Override
     public boolean locate_disc(Position a, Disc disc)
@@ -51,15 +61,30 @@ public class GameLogic implements PlayableLogic {
             ArrayList<Disc> willFlip;
             if(disc.getOwner().equals(firstPlayer))
                 willFlip = checkAllFlips(a, secondPlayer);
-
             else
                 willFlip = checkAllFlips(a, firstPlayer);
             flipDiscs(willFlip);
+
+            int currentPlayer;
+            if(playerTurn)
+                currentPlayer = 1;
+            else
+                currentPlayer = 2;
+
+            System.out.println("Player "+currentPlayer+" placed a "+disc.getType()+" in "+a.toString());
+
 
             playerTurn = !playerTurn; //Change turn
 
             board[a.row()][a.col()] = disc;
             discs.add(disc);
+
+            if(disc instanceof UnflippableDisc)
+                disc.getOwner().reduce_unflippedable();
+            else if(disc instanceof BombDisc)
+                disc.getOwner().reduce_bomb();
+
+            System.out.println("");
 
             return true;
         }
@@ -70,17 +95,93 @@ public class GameLogic implements PlayableLogic {
     {
         for (int i = 0; i < toFlip.size(); i++)
         {
-            if(toFlip.get(i).getOwner().equals(firstPlayer))
-                toFlip.get(i).setOwner(secondPlayer);
-            else
-                toFlip.get(i).setOwner(firstPlayer);
+            if(toFlip.get(i) instanceof SimpleDisc)
+            {
+                singleFlip(toFlip.get(i));
+            }
+            else if (toFlip.get(i) instanceof BombDisc)
+            {
+                explode(toFlip.get(i));
+
+            }
+
         }
+    }
+
+    private Position getLocationOfDisc(Disc disc)
+    {
+        for (int i = 0; i < board.length; i++)
+        {
+            for (int j = 0; j < board[i].length; j++)
+            {
+                if(board[i][j] != null && board[i][j].equals(disc))
+                    return new Position(i,j);
+            }
+        }
+
+        return null;
+    }
+
+    private void explode(Disc bomb)
+    {
+        Position location = getLocationOfDisc(bomb);
+
+        if(location == null)
+            return;
+
+        singleFlip(bomb);
+
+        ArrayList<BombDisc> moreBombs = new ArrayList<>();
+        Position copyLocation;
+
+        for (int i = 0; i < directions.length; i++)
+        {
+            copyLocation = new Position(location); //copy constructor
+            copyLocation.setRow(location.row()+directions[i].row());
+            copyLocation.setCol(location.col()+directions[i].col());
+            Disc checkDisc = getDiscAtPosition(copyLocation);
+            if(checkDisc instanceof SimpleDisc)
+                singleFlip(checkDisc);
+            else if (checkDisc instanceof BombDisc)
+                moreBombs.add((BombDisc) checkDisc);
+
+
+        }
+
+        for (int i = 0; i < moreBombs.size(); i++) {
+            explode(moreBombs.get(i));
+        }
+    }
+
+    private void singleFlip(Disc disc)
+    {
+        int currentPlayer;
+        Player currentOwner = disc.getOwner();
+        if(currentOwner.equals(firstPlayer))
+        {
+            disc.setOwner(secondPlayer);
+            currentPlayer = 2;
+        }
+        else
+        {
+            disc.setOwner(firstPlayer);
+            currentPlayer = 1;
+        }
+
+        Position position = getLocationOfDisc(disc);
+        if(position != null)
+            System.out.println("Player "+currentPlayer+" flipped the "+disc.getType()+" in "+position.toString());
+
     }
 
     @Override
     public Disc getDiscAtPosition(Position position)
     {
+        if(checkOutOfBound(position))
+            return null;
+
         return board[position.row()][position.col()];
+
     }
 
     @Override
@@ -137,6 +238,13 @@ public class GameLogic implements PlayableLogic {
     {
         ArrayList<Disc> willFlips = new ArrayList<>();
         Position pos = new Position(move); //Copy constructor
+
+        for (int i = 0; i < directions.length; i++)
+        {
+            willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, directions[i].row(), directions[i].col()));
+        }
+
+        /**
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, 1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 0, -1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1, 0));
@@ -145,6 +253,8 @@ public class GameLogic implements PlayableLogic {
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, -1,-1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, 1,-1));
         willFlips.addAll(checkDiscsFlip(pos, enemyPlayer, -1,1));
+        */
+
 
         return willFlips;
     }
@@ -259,9 +369,9 @@ public class GameLogic implements PlayableLogic {
             for (int j = 0; j < boardLength; j++) {
                 position = new Position(i,j);
                 if(playerTurn)
-                    moves += checkAllFlips(position, firstPlayer).size();
-                if(!playerTurn)
                     moves += checkAllFlips(position, secondPlayer).size();
+                if(!playerTurn)
+                    moves += checkAllFlips(position, firstPlayer).size();
             }
         }
 
@@ -272,12 +382,12 @@ public class GameLogic implements PlayableLogic {
         int countSecondPlayer = countDisc(secondPlayer);
         if(countFirstPlayer > countSecondPlayer)
         {
-            System.out.println("Game over, the winner is the first player with: "+countFirstPlayer+" discs, the second player is with: "+countSecondPlayer+" discs.");
+            System.out.println("Player 1 wins with "+countFirstPlayer+" discs! Player 2 had "+countSecondPlayer+" discs.");
             firstPlayer.addWin();
         }
         else if(countSecondPlayer > countFirstPlayer)
         {
-            System.out.println("Game over, the winner is the second player with: "+countSecondPlayer+" discs, the first player is with: "+countFirstPlayer+" discs.");
+            System.out.println("Player 2 wins with "+countSecondPlayer+" discs! Player 1 had "+countFirstPlayer+" discs.");
             secondPlayer.addWin();
         }
         else
@@ -324,6 +434,8 @@ public class GameLogic implements PlayableLogic {
             position = new Position(4,4);
             discs.add(simple);
             board[position.row()][position.col()] = simple;
+
+            firstPlayer.reset_bombs_and_unflippedable();
         }
         if(secondPlayer != null)
         {
@@ -340,22 +452,31 @@ public class GameLogic implements PlayableLogic {
             discs.add(simple);
             board[position.row()][position.col()] = simple;
 
+            secondPlayer.reset_bombs_and_unflippedable();
         }
+
     }
 
     @Override
     public void undoLastMove()
     {
+        System.out.println("Undoing last move:");
         if(!firstPlayer.isHuman() || !secondPlayer.isHuman())
             return ;
         if(!previousMoves.isEmpty())
         {
             Move move = previousMoves.pop();
-
+            System.out.println("\tUndo: removing "+move.disc().getType()+" from "+move.position().toString());
             for (int i = 0; i < board.length; i++)
             {
                 for (int j = 0; j < board[i].length; j++)
                 {
+                    if(board[i][j] != null && move.getBoard()[i][j] != null)
+                        if(!board[i][j].getOwner().equals(move.getBoard()[i][j].getOwner()))
+                        {
+                            Position printPos = new Position(i,j);
+                            System.out.println("\tUndo: flipping back "+board[i][j].getType()+" in "+printPos.toString());
+                        }
                      board[i][j] = move.getBoard()[i][j];
                 }
             }
@@ -366,8 +487,10 @@ public class GameLogic implements PlayableLogic {
         }
         else
         {
-            System.out.println("No more turns to undo");
+            System.out.println("\tNo previous moves to undo.");
         }
+
+        System.out.println("");
     }
 
     public Disc[][] getBoard()

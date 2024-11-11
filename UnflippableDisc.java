@@ -1,8 +1,20 @@
-public class UnflippableDisc extends Disc {
+public class UnflippableDisc implements Disc {
 
-    public UnflippableDisc(Player player)
+    private Player owner;
+
+    public UnflippableDisc(Player owner)
     {
-        super(player);
+        this.owner = owner;
+    }
+
+    public void setOwner(Player player)
+    {
+        owner = player;
+    }
+
+    public Player getOwner()
+    {
+        return owner;
     }
 
     @Override
